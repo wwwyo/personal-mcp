@@ -18,16 +18,20 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.ref }}
-      - run: bun install --lockfile-only --ignore-scripts
+      # worker/ と camera/ は別の lockfile を持つ。Dependabot の PR が触った側だけ変わる
+      - run: |
+          for dir in worker camera; do
+            (cd "$dir" && bun install --lockfile-only --ignore-scripts)
+          done
       - name: Commit a changed lockfile
         env:
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          if git diff --quiet -- bun.lock; then
+          if git diff --quiet -- worker/bun.lock camera/bun.lock; then
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add bun.lock
+          git add worker/bun.lock camera/bun.lock
           git commit -m 'build(deps): regenerate lockfile'
           git push origin "HEAD:${PR_HEAD_REF}"

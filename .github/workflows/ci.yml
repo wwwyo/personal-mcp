@@ -14,8 +14,11 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  worker:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
@@ -23,3 +26,15 @@ jobs:
       - run: bun run typecheck
       - run: bun run test
       - run: bun run build
+  camera:
+    # カメラは macOS でしか動かないが、テストは ffmpeg を偽物にしているので Linux で回す
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: camera
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run test

@@ -1,13 +1,22 @@
 version: 2
 updates:
   - package-ecosystem: bun
-    directory: "/"
+    directory: "/worker"
     schedule:
       interval: weekly
     cooldown:
       default-days: 7
     groups:
-      bun:
+      bun-worker:
+        update-types: [minor, patch]
+  - package-ecosystem: bun
+    directory: "/camera"
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      bun-camera:
         update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: "/"
