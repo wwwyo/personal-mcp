@@ -2,7 +2,7 @@
 
 電子工作中の手元を、カメラ越しに Claude に見てもらうためのローカル MCP server。この Mac で動き、ツール `camera_capture` が呼ばれたときだけカメラで 1 枚撮り、JPEG を MCP の image content で返す。録画も保存もしない。
 
-クラウドの Worker（`worker/`）とは別物で、デプロイは無い。この Mac で起動しておくと、Cloudflare Tunnel 越しに MCP Server Portal（`mcp.wwwyo.dev`）から呼べる。
+クラウドの Worker（`worker/`）とは別物で、デプロイは無い。この Mac で起動しておくと、Cloudflare Tunnel 越しに MCP Server Portal（`mcp-media.wwwyo.dev`）から呼べる。
 
 ```text
 agent ──OAuth──▶ MCP Server Portal（Access: 本人のメールだけ）
@@ -40,7 +40,7 @@ bun run start      # MISE_ENV=camera-mcp mise exec -- bun src/index.ts
 
 Orca の terminal など、普段使う terminal から起動する。macOS のカメラ許可は起動した app（terminal）に付くので、**最初の撮影で出る許可ダイアログを許可する**（これだけが手作業）。断ってしまったら「システム設定 → プライバシーとセキュリティ → カメラ」でその app を有効にする。許可が無いと、ツールは「撮影に失敗した（カメラの使用許可が無い…）」を返す。
 
-使わないときは止める（Ctrl-C）。止めている間は portal の server が `error` になるが、他の server には影響しない。portal に一度ログインした grant は無人の agent（Orca automation など）も引き継ぐので、起動したままにすると、その間はそれらの agent からも撮れる。
+使わないときは止める（Ctrl-C）。止めている間は portal の server が `error` になるが、他の server には影響しない。カメラを載せている portal `media`（`mcp-media.wwwyo.dev`）は、普段の portal `wwwyo`（`mcp.wwwyo.dev`）とは別。そのため `wwwyo` だけにつないでいる agent からは撮れない。ただし `media` に一度ログインした grant は、同じ client で動く無人の agent（Orca automation など）も引き継ぐ。起動したままにすると、その間はそれらの agent からも撮れる。
 
 | env | 既定 | 用途 |
 | --- | --- | --- |
@@ -65,7 +65,7 @@ Cloudflare 側は作成済み。portal・server・Access app は dotfiles の `m
 | --- | --- |
 | MCP server | `camera`（ID に `-` を入れない）、`hostname: http://127.0.0.1:47822/mcp`、`auth_type: bearer`、`secure_web_gateway: true`（private な upstream なので Gateway・Tunnel を通す）。宣言は `servers/camera.json` |
 | Access app | `Camera MCP server`（type `mcp`、本人のメールだけ、session 1h）。宣言は `access/apps/camera.json` |
-| portal | `wwwyo`（`mcp.wwwyo.dev`）に `on_behalf: false` で載せている |
+| portal | `media`（`mcp-media.wwwyo.dev`、Code Mode `off`）に `on_behalf: false` で載せている。Code Mode の execute を通すと image content が base64 の文字列になり、出力上限で切れて画像として届かないため、Code Mode が既定の `wwwyo` から分けた。Access app は本人のメールだけ |
 | Gateway network policy | `Loopback via tunnel: only camera MCP port`（`net.dst.ip in {127.0.0.1} and not(net.dst.port in {47822})` を block）。宣言には未収録 |
 | Tunnel | 既存のリモート管理 Tunnel（warp-routing、`127.0.0.1/32` の route）を使う。宣言には未収録 |
 
@@ -83,4 +83,4 @@ MISE_ENV=camera-mcp mise exec -- python3 mcp/cloudflare/apply.py --apply --rotat
 
 ## client から使う
 
-portal に server を足しても、既存の接続（grant）からは新しい server が見えない。各 client で portal の接続を切ってログインし直す（claude.ai はコネクタの切断と再接続、Claude Code は `/mcp`）。Code Mode では portal の検索・実行 tool から `camera_capture` を探して呼ぶ。
+client に `https://mcp-media.wwwyo.dev/mcp` を別の MCP server（コネクタ）として足し、本人のメールでログインする。Code Mode が無いので、`camera_capture` が直接の tool として見え、写真は image content のまま届く。portal に server を足したときは、既存の接続（grant）からは新しい server が見えないので、接続を切ってログインし直す（claude.ai はコネクタの切断と再接続、Claude Code は `/mcp`）。
