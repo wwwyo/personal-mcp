@@ -1,0 +1,17 @@
+# Worker に渡す secret の一覧（名前と説明だけ。値はここに書かない）。
+#
+# このリポジトリは public なので、値（age の暗号文を含む）は gitignore 済みの
+# fnox.local.toml に置く。fnox.local.toml の同名の定義がこの定義を丸ごと置き換える。
+# 値の入れ方と Cloudflare への流し込みは README の「secret を入れる」。
+# scripts/sync-secrets.sh は、この表に provider や value が書かれていたら止まる。
+
+if_missing = "error"
+
+[secrets]
+MCP_BEARER_TOKEN = { description = "portal がこの Worker を呼ぶときの bearer token（portal の server 登録にも同じ値を使う）" }
+LANGFUSE_PUBLIC_KEY = { description = "Langfuse の public key（daily-end と同じ project）" }
+LANGFUSE_SECRET_KEY = { description = "Langfuse の secret key" }
+X_CLIENT_ID = { description = "X の OAuth 2.0 Client ID" }
+X_CLIENT_SECRET = { description = "X の OAuth 2.0 Client Secret（confidential client のときだけ）", if_missing = "ignore" }
+X_REFRESH_TOKEN = { description = "X の refresh token の種。Worker が一度使うとローテートして Durable Object に移る" }
+PRODUCTHUNT_API_TOKEN = { description = "Product Hunt API v2 の developer token" }

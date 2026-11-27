@@ -1,0 +1,12 @@
+node_modules/
+.DS_Store
+.env
+.env.*
+.dev.vars*
+*.log
+.wrangler/
+dist/
+*.local.*
+fnox.local.toml
+.fnox.local.toml
+worker-configuration.d.ts

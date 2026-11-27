@@ -1,0 +1,23 @@
+{
+  "name": "personal-mcp",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "typecheck": "wrangler types --include-env=false >/dev/null && tsc --noEmit",
+    "test": "bun test",
+    "cf-typegen": "wrangler types",
+    "deploy": "wrangler deploy",
+    "secrets:sync": "./scripts/sync-secrets.sh"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "bun-types": "1.4.4",
+    "typescript": "7.0.2",
+    "wrangler": "4.165.0"
+  }
+}
