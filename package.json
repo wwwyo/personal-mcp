@@ -4,11 +4,11 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "typecheck": "wrangler types --include-env=false >/dev/null && tsc --noEmit",
-    "test": "bun test",
-    "cf-typegen": "wrangler types",
-    "deploy": "wrangler deploy",
+    "dev": "vite dev",
+    "build": "vite build",
+    "typecheck": "void prepare && tsc --noEmit",
+    "test": "vitest run",
+    "deploy": "void deploy",
     "secrets:sync": "./scripts/sync-secrets.sh"
   },
   "dependencies": {
@@ -16,8 +16,9 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
-    "bun-types": "1.4.5",
     "typescript": "7.0.2",
-    "wrangler": "4.165.0"
+    "vite": "8.3.8",
+    "vitest": "5.1.1",
+    "void": "1.11.0"
   }
 }

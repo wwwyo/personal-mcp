@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { isAuthorized } from "../src/auth.ts";
 
 test("一致する bearer だけを通す", async () => {

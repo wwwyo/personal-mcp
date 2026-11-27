@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { addDays, dayWindow } from "../src/time.ts";
 
 test("JST の暦日は前日 15:00Z から", () => {

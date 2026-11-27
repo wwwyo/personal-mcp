@@ -1,4 +1,4 @@
-import { ToolError } from "./env.ts";
+import { ToolError } from "./app-env.ts";
 
 // X の OAuth 2.0 user context token と bookmarks の既読状態を持つ。
 // Durable Object（x-token-store.ts）の中で 1 インスタンスだけが動くので、
@@ -71,7 +71,7 @@ export class XState {
   async #refresh(app: XAppConfig, current: Tokens | undefined, seedHash: string): Promise<Tokens> {
     const refreshToken = current?.refresh_token ?? app.seedRefreshToken;
     if (!refreshToken) {
-      throw new ToolError("X の refresh token が無い（wrangler secret put X_REFRESH_TOKEN で種を入れる）");
+      throw new ToolError("X の refresh token が無い（void secret put X_REFRESH_TOKEN で種を入れる）");
     }
     const headers: Record<string, string> = { "Content-Type": "application/x-www-form-urlencoded" };
     if (app.clientSecret) headers.Authorization = `Basic ${btoa(`${app.clientId}:${app.clientSecret}`)}`;
@@ -92,7 +92,7 @@ export class XState {
       } catch {}
       throw new ToolError(
         `X の token refresh に失敗（HTTP ${res.status} ${code}）。refresh token が失効していれば、` +
-          "手元で取り直して wrangler secret put X_REFRESH_TOKEN で入れ直す",
+          "手元で取り直して void secret put X_REFRESH_TOKEN で入れ直す",
       );
     }
     const r = (await res.json()) as Record<string, unknown>;

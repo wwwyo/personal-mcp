@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "source": {
+    "name": "personal-mcp",
+    "workers_dev": true,
+    "observability": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "logs": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "persist": true,
+        "invocation_logs": true
+      }
+    }
+  },
+  "resolved": {
+    "name": "personal-mcp",
+    "workers_dev": true,
+    "observability": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "logs": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "persist": true,
+        "invocation_logs": true
+      }
+    },
+    "durable_objects": {
+      "bindings": [
+        {
+          "name": "X_TOKENS",
+          "class_name": "XTokensDurableObject"
+        }
+      ]
+    },
+    "migrations": [
+      {
+        "tag": "void-durable-x-tokens-v1",
+        "new_sqlite_classes": [
+          "XTokensDurableObject"
+        ]
+      }
+    ]
+  },
+  "text": "{\n  \"name\": \"personal-mcp\",\n  \"workers_dev\": true,\n  \"observability\": {\n    \"enabled\": true,\n    \"head_sampling_rate\": 1,\n    \"logs\": {\n      \"enabled\": true,\n      \"head_sampling_rate\": 1,\n      \"persist\": true,\n      \"invocation_logs\": true\n    }\n  },\n  \"durable_objects\": {\n    \"bindings\": [\n      {\n        \"name\": \"X_TOKENS\",\n        \"class_name\": \"XTokensDurableObject\"\n      }\n    ]\n  },\n  \"migrations\": [\n    {\n      \"tag\": \"void-durable-x-tokens-v1\",\n      \"new_sqlite_classes\": [\n        \"XTokensDurableObject\"\n      ]\n    }\n  ]\n}\n"
+}

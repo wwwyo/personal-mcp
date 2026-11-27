@@ -1,5 +1,5 @@
-import { expect, test } from "bun:test";
-import type { Env } from "../src/env.ts";
+import { expect, test } from "vitest";
+import type { Env } from "../src/app-env.ts";
 import { topPosts } from "../src/producthunt.ts";
 import { fakeFetch, json } from "./helpers.ts";
 

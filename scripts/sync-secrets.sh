@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
-# fnox で復号した値を、そのまま Cloudflare Worker の secret に流し込む。
+# fnox で復号した値を、そのまま Void（Cloudflare Worker）の secret に流し込む。
 #
 #   ./scripts/sync-secrets.sh                 # fnox.toml の全 secret
 #   ./scripts/sync-secrets.sh X_REFRESH_TOKEN # 指定したものだけ
 #
-# 値は変数を経由して wrangler の stdin に渡すだけで、画面・ファイル・引数には出さない。
-# 先に `bun run deploy` で Worker を作っておく（無い Worker には secret を置けない）。
+# この script は値を変数から `void secret put` の stdin に渡すだけで、画面・引数・repo 内のファイルには出さない。
+# ただし void 1.11.0 は送信のあいだ値を OS の一時ディレクトリの body.json（mode 0600）に書き、終わると消す。
+# 先に `bunx void connect --platform cloudflare` で Cloudflare を選んでおく。
+# 初回は deploy の前に流す（void deploy は env.ts の必須 key がリモートに無いと止まる。
+# まだ deploy していない Worker には draft として secret が置かれる）。
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -28,7 +31,18 @@ else
   names=("${required[@]}" "${optional[@]}")
 fi
 
+void_bin=node_modules/.bin/void
+if [[ ! -x "$void_bin" ]]; then
+  echo "void が無い。先に bun install する" >&2
+  exit 1
+fi
+
 for name in "${names[@]}"; do
+  # void secret put は env.ts で宣言した key しか受けない。宣言漏れは値を読む前に止める
+  if ! grep -Eq "^[[:space:]]*${name}:" env.ts; then
+    echo "error $name が env.ts に無い（env.ts・fnox.toml・この script を揃える）" >&2
+    exit 1
+  fi
   if ! value=$(fnox get "$name" 2>/dev/null) || [[ -z "$value" ]]; then
     if [[ " ${optional[*]} " == *" $name "* ]]; then
       echo "skip  $name（未設定。任意）"
@@ -37,7 +51,7 @@ for name in "${names[@]}"; do
     echo "error $name を fnox から取れない（fnox.local.toml に入れたか確認する）" >&2
     exit 1
   fi
-  printf '%s' "$value" | bunx wrangler secret put "$name" >/dev/null
+  printf '%s' "$value" | "$void_bin" secret put "$name" >/dev/null
   unset value
   echo "put   $name"
 done

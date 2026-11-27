@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, test } from "vitest";
 import { XClient, expandShortUrls, maxId, tweetBodyText } from "../src/x.ts";
 import { XState } from "../src/x-state.ts";
 import { fakeFetch, json, memoryKV } from "./helpers.ts";

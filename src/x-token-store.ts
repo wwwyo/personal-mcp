@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import type { Env } from "./env.ts";
+import type { Env } from "./app-env.ts";
 import { type BookmarksState, type KV, type XAppConfig, XState } from "./x-state.ts";
 
 /**

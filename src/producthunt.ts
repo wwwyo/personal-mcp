@@ -1,4 +1,4 @@
-import { type Env, ToolError, requireSecret } from "./env.ts";
+import { type Env, ToolError, requireSecret } from "./app-env.ts";
 import { addDays, dateIn, dayWindow } from "./time.ts";
 
 // wwwyo/me の rss skill（fetch.py の fetch_producthunt）と同じ取り方。
