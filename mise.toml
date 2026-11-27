@@ -2,3 +2,5 @@
 bun = "1.4.4"
 # Void（vite・void CLI）は Node.js 24.22 以上が要る
 node = "24.22.1"
+# worker/ の secret（fnox.local.toml）を復号して Worker に流す
+fnox = "1.46.0"

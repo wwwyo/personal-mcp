@@ -46,7 +46,7 @@ bun run secrets:sync                      # fnox で復号して void secret put
 bun run deploy                            # void deploy（build・Durable Object の作成・デプロイ）
 ```
 
-`MCP_BEARER_TOKEN` を Bearer で付けて `POST https://personal-mcp.<subdomain>.workers.dev/mcp` に `tools/list` を送り、7 つのツールが返れば動いている。portal への登録と各 key の入れ方は [docs/setup.md](docs/setup.md)。
+`MCP_BEARER_TOKEN` を Bearer で付けて `POST https://personal-mcp.<subdomain>.workers.dev/mcp`（`bun run deploy` が表示する URL） に `tools/list` を送り、7 つのツールが返れば動いている。portal への登録と各 key の入れ方は [docs/setup.md](docs/setup.md)。
 
 ## カメラ（camera/）
 
