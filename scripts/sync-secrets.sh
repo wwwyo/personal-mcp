@@ -4,7 +4,8 @@
 #   ./scripts/sync-secrets.sh                 # fnox.toml の全 secret
 #   ./scripts/sync-secrets.sh X_REFRESH_TOKEN # 指定したものだけ
 #
-# 値は変数を経由して `void secret put` の stdin に渡すだけで、画面・ファイル・引数には出さない。
+# この script は値を変数から `void secret put` の stdin に渡すだけで、画面・引数・repo 内のファイルには出さない。
+# ただし void 1.11.0 は送信のあいだ値を OS の一時ディレクトリの body.json（mode 0600）に書き、終わると消す。
 # 先に `bunx void connect --platform cloudflare` で Cloudflare を選んでおく。
 # 初回は deploy の前に流す（void deploy は env.ts の必須 key がリモートに無いと止まる。
 # まだ deploy していない Worker には draft として secret が置かれる）。

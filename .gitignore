@@ -2,6 +2,8 @@ node_modules/
 .DS_Store
 .env
 .env.*
+# wrangler 時代の手元の値。残っていても commit しない
+.dev.vars*
 *.log
 .wrangler/
 dist/

@@ -57,7 +57,7 @@ age -d -i <(security find-generic-password -a "$USER" -s mise-age-key -w) "$me/.
 
 **X の refresh token は 1 本を共有できない。** X は refresh のたびに refresh token をローテートし、古い方を失効させる。Worker が一度 refresh すると、手元の `x_fetch.py` が持つ token は使えなくなる（逆も同じ）。手元の daily-end から X の取得を外す時点で入れる。手元も残すなら、`x_auth.py login` をもう一度通して別の token を作り、そちらを渡す。
 
-最後に Worker へ流す。値は `void secret put` の stdin に渡すだけで、画面・ファイル・引数には出ない。まだデプロイしていない Worker には draft として置かれる。
+最後に Worker へ流す。`sync-secrets.sh` は値を `void secret put` の stdin に渡すだけで、画面・引数・repo 内のファイルには出さない。ただし void（1.11.0）自身は送信のあいだ値を OS の一時ディレクトリの `body.json`（mode 0600）に書き、送信後に消す。まだデプロイしていない Worker には draft として置かれる。
 
 ```bash
 bun run secrets:sync                    # 全部
