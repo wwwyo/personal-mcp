@@ -2,11 +2,14 @@ node_modules/
 .DS_Store
 .env
 .env.*
-.dev.vars*
 *.log
 .wrangler/
 dist/
 *.local.*
 fnox.local.toml
 .fnox.local.toml
-worker-configuration.d.ts
+# Void の生成物（void.config.ts と void.lock.json は commit する）
+.void/
+.void-wrangler.jsonc
+.cloudflare/
+*.tsbuildinfo

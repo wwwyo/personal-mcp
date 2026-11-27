@@ -1,13 +1,17 @@
 import type { XTokenStore } from "./x-token-store.ts";
 
-/** Worker のバインディング。値はすべて wrangler secret（scripts/sync-secrets.sh が fnox から流し込む）か wrangler.jsonc の vars。 */
+/**
+ * ツールが読む設定とバインディング。routes/mcp.ts が組み立てて渡す。
+ * secret は root の env.ts で宣言し、値は void secret（scripts/sync-secrets.sh が fnox から流し込む）。
+ * X_TOKENS は durable-objects/x-tokens.ts から Void が作る binding。
+ */
 export interface Env {
   /** portal（Cloudflare MCP Server Portal）がこの Worker を呼ぶときの bearer token */
   MCP_BEARER_TOKEN: string;
 
   LANGFUSE_PUBLIC_KEY?: string;
   LANGFUSE_SECRET_KEY?: string;
-  /** vars。例: https://jp.cloud.langfuse.com */
+  /** env.ts の既定値（https://jp.cloud.langfuse.com）。secret で上書きできる */
   LANGFUSE_BASE_URL: string;
 
   X_CLIENT_ID?: string;
@@ -26,7 +30,7 @@ export class ToolError extends Error {}
 export function requireSecret(env: Env, name: keyof Env): string {
   const v = env[name];
   if (typeof v !== "string" || v.trim() === "") {
-    throw new ToolError(`${String(name)} が未設定（wrangler secret put ${String(name)}）`);
+    throw new ToolError(`${String(name)} が未設定（void secret put ${String(name)}）`);
   }
   return v.trim();
 }

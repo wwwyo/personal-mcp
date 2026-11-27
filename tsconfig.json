@@ -1,4 +1,5 @@
 {
+  "extends": "./.void/tsconfig.json",
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["ESNext"],
@@ -15,7 +16,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": ["./worker-configuration.d.ts", "bun-types"]
+    "types": ["void/env"]
   },
-  "include": ["src", "test"]
+  "include": ["src", "test", "routes", "durable-objects", "env.ts", "void.config.ts", "vite.config.ts"]
 }

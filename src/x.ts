@@ -1,4 +1,4 @@
-import { ToolError } from "./env.ts";
+import { ToolError } from "./app-env.ts";
 import type { BookmarksState, XAppConfig } from "./x-state.ts";
 
 // wwwyo/me の daily-end の x_fetch.py と同じ API・同じ課金上の配慮で取る。

@@ -1,4 +1,4 @@
-import { type Env, ToolError, requireSecret } from "./env.ts";
+import { type Env, ToolError, requireSecret } from "./app-env.ts";
 import { dayWindow, isoSeconds } from "./time.ts";
 
 // wwwyo/me の daily-end（day_sessions.py）と dotfiles の session_eval.py と同じ取り方をする。
