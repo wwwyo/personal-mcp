@@ -1,15 +1,18 @@
-# セットアップ
+# Worker のセットアップ
+
+クラウドの Worker（`worker/`）のデプロイと secret の手順。コマンドはすべて `worker/` で実行する。この Mac で動くカメラ（`camera/`）は別の手順で、[camera.md](camera.md) にある。
 
 key の値はリポジトリに置かない。手元では fnox（gitignore 済みの `fnox.local.toml`）が持ち、`scripts/sync-secrets.sh` が復号して `void secret put` で Worker の secret に流す。Worker は普通の secret を読むだけで、fnox は動かさない。
 
-この repo は [Void](https://void.cloud)（VoidZero）のアプリで、`void deploy` が自分の Cloudflare アカウントへ直接デプロイする。Worker の設定は `void.config.ts`、Void が記録する Durable Object の migration などは `void.lock.json`（どちらも commit する）。secret の宣言は root の `env.ts`。
+この repo は [Void](https://void.cloud)（VoidZero）のアプリで、`void deploy` が自分の Cloudflare アカウントへ直接デプロイする。Worker の設定は `void.config.ts`、Void が記録する Durable Object の migration などは `void.lock.json`（どちらも commit する）。secret の宣言は `worker/env.ts`。
 
 初回の順番は「Cloudflare につなぐ → secret を入れる → デプロイ」。`void deploy` は `env.ts` の必須 key（`MCP_BEARER_TOKEN`）がリモートに無いと止まるので、secret を先に入れる。
 
 ## 1. Cloudflare につなぐ
 
 ```bash
-mise install && bun install
+mise install
+cd worker && bun install
 bunx void connect --platform cloudflare
 ```
 
@@ -21,7 +24,7 @@ bunx void connect --platform cloudflare
 
 ## 2. secret を入れる
 
-入れる secret の名前と説明は [fnox.toml](../fnox.toml)、Worker 側の宣言は [env.ts](../env.ts)。値は `fnox.local.toml` に age で暗号化して置く。`fnox set` は何も指定しないと cwd の `fnox.toml` に書くので、必ず `-c ./fnox.local.toml` を付ける（`fnox.toml` に `provider` / `value` があると `sync-secrets.sh` は止まる）。
+入れる secret の名前と説明は [worker/fnox.toml](../worker/fnox.toml)、Worker 側の宣言は [worker/env.ts](../worker/env.ts)。値は `fnox.local.toml` に age で暗号化して置く。`fnox set` は何も指定しないと cwd の `fnox.toml` に書くので、必ず `-c ./fnox.local.toml` を付ける（`fnox.toml` に `provider` / `value` があると `sync-secrets.sh` は止まる）。
 
 `fnox.local.toml` の先頭に age の provider を書く（recipient は自分の age 公開鍵。復号鍵は fnox のいつもの設定から）。
 
