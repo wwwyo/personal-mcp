@@ -83,7 +83,7 @@ bunx void secret list                   # 入った secret の名前を確かめ
 bun run deploy   # void deploy
 ```
 
-Void が build し、Durable Object（`XTokensDurableObject`）を作り、新しい version の readiness を確かめてから切り替える。最後に `https://personal-mcp.<subdomain>.workers.dev` が表示される（いまの本番は `https://personal-mcp.mix-mix.workers.dev`）。デプロイで `void.lock.json` が変わったら commit する（Durable Object の migration 履歴。消したり並べ替えたりしない）。
+Void が build し、Durable Object（`XTokensDurableObject`）を作り、新しい version の readiness を確かめてから切り替える。最後に `https://personal-mcp.<subdomain>.workers.dev` が表示される（作者の本番 instance は `https://personal-mcp.mix-mix.workers.dev`。自分でデプロイしたときは表示された URL を使う）。デプロイで `void.lock.json` が変わったら commit する（Durable Object の migration 履歴。消したり並べ替えたりしない）。
 
 デプロイの状態と巻き戻しは `bunx void project status` / `bunx void project rollback`、ログは `bunx void project logs`。
 
@@ -113,7 +113,7 @@ MCP_BEARER_TOKEN="$(fnox get MCP_BEARER_TOKEN)" \
 ```bash
 # token は header として stdin から渡す（argv・画面に出さない）
 fnox get MCP_BEARER_TOKEN | sed 's/^/Authorization: Bearer /' \
-  | curl -sS https://personal-mcp.mix-mix.workers.dev/mcp -H @- \
+  | curl -sS https://personal-mcp.<subdomain>.workers.dev/mcp -H @- \
     -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
     -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq -r '.result.tools[].name'
 ```
