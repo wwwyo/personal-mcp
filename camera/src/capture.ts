@@ -46,7 +46,7 @@ export function selectCamera(devices: VideoDevice[], wanted?: string): VideoDevi
 }
 
 /** 1 枚撮る ffmpeg の引数。最初の 1 秒は露出が落ち着かないので捨て、JPEG を stdout に出す */
-export function captureArgs(device: VideoDevice, width: number): string[] {
+export function captureArgs(device: VideoDevice, width: number, framerate = "30"): string[] {
   return [
     "-hide_banner",
     "-loglevel",
@@ -54,7 +54,7 @@ export function captureArgs(device: VideoDevice, width: number): string[] {
     "-f",
     "avfoundation",
     "-framerate",
-    "30",
+    framerate,
     "-i",
     `${device.index}:none`,
     "-ss",
@@ -71,6 +71,16 @@ export function captureArgs(device: VideoDevice, width: number): string[] {
     "mjpeg",
     "pipe:1",
   ];
+}
+
+/**
+ * avfoundation は対応しない framerate を指定すると失敗し、stderr に対応するモード
+ * （`1280x720@[15.000000 15.000000]fps`）を並べる。その最初のモードの上限 fps を返す
+ */
+export function supportedFramerate(stderr: string): string | undefined {
+  if (!/framerate .*not supported/i.test(stderr)) return undefined;
+  const m = /@\[\s*[\d.]+\s+([\d.]+)\s*\]fps/.exec(stderr);
+  return m?.[1];
 }
 
 export interface RunResult {
@@ -111,8 +121,12 @@ export function createCamera(opts: { run?: Run; wanted?: string; timeoutMs?: num
 
   async function captureOnce(width: number) {
     const list = await run(["-hide_banner", "-f", "avfoundation", "-list_devices", "true", "-i", ""], timeoutMs);
+    if (list.code === -1) throw new CaptureError("カメラの一覧の取得が時間内に終わらなかった");
     const device = selectCamera(parseVideoDevices(list.stderr), opts.wanted);
-    const res = await run(captureArgs(device, width), timeoutMs);
+    let res = await run(captureArgs(device, width), timeoutMs);
+    // 30fps を持たないカメラ（外付けの USB カメラなど）は、ffmpeg が示す対応 fps で 1 回だけ撮り直す
+    const fallback = res.code > 0 ? supportedFramerate(res.stderr) : undefined;
+    if (fallback) res = await run(captureArgs(device, width, fallback), timeoutMs);
     if (res.code === -1) throw new CaptureError("撮影が時間内に終わらなかった");
     if (res.code !== 0) {
       // 許可が無いときは ffmpeg が失敗する。詳細はこの Mac のログにだけ出す

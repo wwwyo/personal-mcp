@@ -1,5 +1,13 @@
 import { expect, test } from "bun:test";
-import { CaptureError, captureArgs, createCamera, parseVideoDevices, type Run, selectCamera } from "../src/capture.ts";
+import {
+  CaptureError,
+  captureArgs,
+  createCamera,
+  parseVideoDevices,
+  type Run,
+  selectCamera,
+  supportedFramerate,
+} from "../src/capture.ts";
 
 const LIST = `[AVFoundation indev @ 0x1] AVFoundation video devices:
 [AVFoundation indev @ 0x1] [0] FaceTime HDカメラ
@@ -73,6 +81,36 @@ test("時間切れ・JPEG でない出力は CaptureError", async () => {
   await expect(createCamera({ run: timeout.run }).capture(1280)).rejects.toThrow("時間内");
   const notJpeg = fakeRun(() => ({ code: 0, stdout: new Uint8Array([1, 2, 3]), stderr: "" }));
   await expect(createCamera({ run: notJpeg.run }).capture(1280)).rejects.toThrow("JPEG");
+});
+
+const UNSUPPORTED = `[avfoundation @ 0x1] Selected framerate (30.000000) is not supported by the device.
+[avfoundation @ 0x1] Supported modes:
+[avfoundation @ 0x1]   1920x1080@[15.000000 15.000000]fps
+[avfoundation @ 0x1]   640x480@[5.000000 30.000000]fps
+`;
+
+test("対応しない framerate のエラーから最初のモードの fps を取り出す", () => {
+  expect(supportedFramerate(UNSUPPORTED)).toBe("15.000000");
+  expect(supportedFramerate("not authorized")).toBeUndefined();
+});
+
+test("30fps を持たないカメラは対応 fps で 1 回だけ撮り直す", async () => {
+  const calls: string[][] = [];
+  const run: Run = async (args) => {
+    calls.push(args);
+    if (args.includes("-list_devices")) return { code: 1, stdout: new Uint8Array(), stderr: LIST };
+    if (args[args.indexOf("-framerate") + 1] === "30") return { code: 1, stdout: new Uint8Array(), stderr: UNSUPPORTED };
+    return { code: 0, stdout: JPEG, stderr: "" };
+  };
+  const r = await createCamera({ run }).capture(1280);
+  expect(r.jpeg).toEqual(JPEG);
+  expect(calls).toHaveLength(3);
+  expect(calls[2]).toContain("15.000000");
+});
+
+test("一覧の取得が時間切れなら「見つからない」ではなく時間切れを返す", async () => {
+  const run: Run = async () => ({ code: -1, stdout: new Uint8Array(), stderr: "" });
+  await expect(createCamera({ run }).capture(1280)).rejects.toThrow("一覧の取得が時間内");
 });
 
 test("同時に呼ばれても 1 枚ずつ順に撮る", async () => {
