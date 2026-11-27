@@ -26,12 +26,19 @@ bunx void connect --platform cloudflare
 
 入れる secret の名前と説明は [worker/fnox.toml](../worker/fnox.toml)、Worker 側の宣言は [worker/env.ts](../worker/env.ts)。値は `fnox.local.toml` に age で暗号化して置く。`fnox set` は何も指定しないと cwd の `fnox.toml` に書くので、必ず `-c ./fnox.local.toml` を付ける（`fnox.toml` に `provider` / `value` があると `sync-secrets.sh` は止まる）。
 
-`fnox.local.toml` の先頭に age の provider を書く（recipient は自分の age 公開鍵。復号鍵は fnox のいつもの設定から）。
+`fnox.local.toml` の先頭に age の provider を書く（recipient は自分の age 公開鍵）。fnox は repo の `mise.toml` で入る。復号鍵は環境変数 `FNOX_AGE_KEY` で渡す。下の `fnox get`・`secrets:sync`・確認の前に、同じ shell で次を実行しておく（鍵は Keychain の `mise-age-key`。画面には出ない）。
 
 ```toml
 [providers.age]
 type = "age"
 recipients = ["age1..."]
+```
+
+```bash
+# recipient はこれで出せる（公開鍵なので表示してよい）
+security find-generic-password -a "$USER" -s mise-age-key -w | age-keygen -y
+# 復号鍵（この shell の中だけ）
+export FNOX_AGE_KEY="$(security find-generic-password -a "$USER" -s mise-age-key -w)"
 ```
 
 値は画面に出さず、パイプで `fnox set` に渡す。
@@ -60,7 +67,7 @@ age -d -i <(security find-generic-password -a "$USER" -s mise-age-key -w) "$me/.
 
 **X の refresh token は 1 本を共有できない。** X は refresh のたびに refresh token をローテートし、古い方を失効させる。Worker が一度 refresh すると、手元の `x_fetch.py` が持つ token は使えなくなる（逆も同じ）。手元の daily-end から X の取得を外す時点で入れる。手元も残すなら、`x_auth.py login` をもう一度通して別の token を作り、そちらを渡す。
 
-最後に Worker へ流す。`sync-secrets.sh` は値を `void secret put` の stdin に渡すだけで、画面・引数・repo 内のファイルには出さない。ただし void（1.11.0）自身は送信のあいだ値を OS の一時ディレクトリの `body.json`（mode 0600）に書き、送信後に消す。まだデプロイしていない Worker には draft として置かれる。
+最後に Worker へ流す。`X_REFRESH_TOKEN` をまだ入れていないときは、全部流す `bun run secrets:sync` は止まるので、入れたものを名前で並べる（`./scripts/sync-secrets.sh MCP_BEARER_TOKEN LANGFUSE_PUBLIC_KEY …`）。`sync-secrets.sh` は値を `void secret put` の stdin に渡すだけで、画面・引数・repo 内のファイルには出さない。ただし void（1.11.0）自身は送信のあいだ値を OS の一時ディレクトリの `body.json`（mode 0600）に書き、送信後に消す。まだデプロイしていない Worker には draft として置かれる。
 
 ```bash
 bun run secrets:sync                    # 全部
@@ -76,7 +83,7 @@ bunx void secret list                   # 入った secret の名前を確かめ
 bun run deploy   # void deploy
 ```
 
-Void が build し、Durable Object（`XTokensDurableObject`）を作り、新しい version の readiness を確かめてから切り替える。最後に `https://personal-mcp.<subdomain>.workers.dev` が表示される。デプロイで `void.lock.json` が変わったら commit する（Durable Object の migration 履歴。消したり並べ替えたりしない）。
+Void が build し、Durable Object（`XTokensDurableObject`）を作り、新しい version の readiness を確かめてから切り替える。最後に `https://personal-mcp.<subdomain>.workers.dev` が表示される（いまの本番は `https://personal-mcp.mix-mix.workers.dev`）。デプロイで `void.lock.json` が変わったら commit する（Durable Object の migration 履歴。消したり並べ替えたりしない）。
 
 デプロイの状態と巻き戻しは `bunx void project status` / `bunx void project rollback`、ログは `bunx void project logs`。
 
@@ -87,25 +94,28 @@ Worker は `X_REFRESH_TOKEN` を種として一度使い、以後はローテー
 MCP の設定は dotfiles の `mcp/cloudflare/` が正本なので、そこで宣言して反映する（手順は dotfiles の AGENTS.md と dev-env skill の mcp-portal）。この server の値は次のとおり。
 
 - server: `auth_type: bearer`、`hostname: https://personal-mcp.<subdomain>.workers.dev/mcp`、credential は `MCP_BEARER_TOKEN` と同じ値（portal は `Authorization: Bearer <値>` を付けて呼ぶ）
-- server ID は `-` を含めない（例 `personal`）。portal は tool 名を `<server ID>_<tool 名>` で扱い、`-` があると ChatGPT からの呼び出しが失敗する
+- server ID は `personal`（`-` を含めない）。portal は tool 名を `<server ID>_<tool 名>` で扱い、`-` があると ChatGPT からの呼び出しが失敗する
 - portal 側は `on_behalf: false`（共有 credential の bearer）
-- Langfuse の記録や X のブックマークは私的なデータなので、どの portal に載せるか（`mcp.wwwyo.dev` か専用の portal か）は載せる前に決める
+- portal は `wwwyo`（`mcp.wwwyo.dev`）に載せ、Access app で本人のメールだけを通す。宣言は dotfiles の `mcp/cloudflare/servers/personal.json`・`access/apps/personal.json`・`portals/wwwyo.json`
+- 載せたあと、既にログイン済みの client からは新しい server が見えない。各 client で portal の接続を切ってログインし直す
 
 credential を apply.py に渡すときも fnox から流す。
 
 ```bash
-fnox exec -- sh -c 'cd ~/src/github.com/wwwyo/dotfiles && mise exec -- python3 mcp/cloudflare/apply.py --apply --rotate-credentials personal'
+MCP_BEARER_TOKEN="$(fnox get MCP_BEARER_TOKEN)" \
+  sh -c 'cd ~/src/github.com/wwwyo/dotfiles && python3 mcp/cloudflare/apply.py --apply --rotate-credentials personal'
 ```
 
-（宣言の `credential_env` を `MCP_BEARER_TOKEN` にした場合。）
+`fnox exec` は使わない。`fnox.toml` が `if_missing = "error"` なので、`X_REFRESH_TOKEN` のように未設定の secret が 1 つでもあると何も実行せずに止まる。
 
 ## 確認
 
 ```bash
-fnox exec -- sh -c 'curl -sS https://personal-mcp.<subdomain>.workers.dev/mcp \
-  -H "Authorization: Bearer $MCP_BEARER_TOKEN" -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}"'
+# token は header として stdin から渡す（argv・画面に出さない）
+fnox get MCP_BEARER_TOKEN | sed 's/^/Authorization: Bearer /' \
+  | curl -sS https://personal-mcp.mix-mix.workers.dev/mcp -H @- \
+    -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+    -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq -r '.result.tools[].name'
 ```
 
 `langfuse_day_sessions` のような実 API を呼ぶ確認は、課金のない Langfuse・Product Hunt から始める。X は 1 回ごとに課金される。

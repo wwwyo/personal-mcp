@@ -42,7 +42,9 @@
           "XTokensDurableObject"
         ]
       }
-    ]
+    ],
+    "account_id": "0f82b8922b8393c603b89b58c7b9d169",
+    "compatibility_date": "2026-02-24"
   },
-  "text": "{\n  \"name\": \"personal-mcp\",\n  \"workers_dev\": true,\n  \"observability\": {\n    \"enabled\": true,\n    \"head_sampling_rate\": 1,\n    \"logs\": {\n      \"enabled\": true,\n      \"head_sampling_rate\": 1,\n      \"persist\": true,\n      \"invocation_logs\": true\n    }\n  },\n  \"durable_objects\": {\n    \"bindings\": [\n      {\n        \"name\": \"X_TOKENS\",\n        \"class_name\": \"XTokensDurableObject\"\n      }\n    ]\n  },\n  \"migrations\": [\n    {\n      \"tag\": \"void-durable-x-tokens-v1\",\n      \"new_sqlite_classes\": [\n        \"XTokensDurableObject\"\n      ]\n    }\n  ]\n}\n"
+  "text": "{\n  \"name\": \"personal-mcp\",\n  \"workers_dev\": true,\n  \"observability\": {\n    \"enabled\": true,\n    \"head_sampling_rate\": 1,\n    \"logs\": {\n      \"enabled\": true,\n      \"head_sampling_rate\": 1,\n      \"persist\": true,\n      \"invocation_logs\": true\n    }\n  },\n  \"durable_objects\": {\n    \"bindings\": [\n      {\n        \"name\": \"X_TOKENS\",\n        \"class_name\": \"XTokensDurableObject\"\n      }\n    ]\n  },\n  \"migrations\": [\n    {\n      \"tag\": \"void-durable-x-tokens-v1\",\n      \"new_sqlite_classes\": [\n        \"XTokensDurableObject\"\n      ]\n    }\n  ],\n  \"account_id\": \"0f82b8922b8393c603b89b58c7b9d169\",\n  \"compatibility_date\": \"2026-02-24\"\n}\n"
 }
