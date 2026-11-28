@@ -1,7 +1,7 @@
 name: Deploy
 
 # main に worker/ の変更が入ったら Worker をデプロイする。手元から流し直すときは Actions の Run workflow。
-# 要るもの: repository secret CLOUDFLARE_API_TOKEN（docs/setup.md の「main へのマージで自動デプロイする」）。
+# 要るもの: repository secret CLOUDFLARE_API_TOKEN（docs/setup.md の「3. デプロイする」）。
 # secret（MCP_BEARER_TOKEN など Worker の secret）は今まで通り手元の secrets:sync で入れる。ここでは扱わない。
 
 on:
@@ -38,18 +38,21 @@ jobs:
         working-directory: .
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::error::repository secret CLOUDFLARE_API_TOKEN が未設定（docs/setup.md の「main へのマージで自動デプロイする」を見る）"
+            echo "::error::repository secret CLOUDFLARE_API_TOKEN が未設定（docs/setup.md の「3. デプロイする」を見る）"
             exit 1
           fi
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run test
       - run: bunx void deploy --platform cloudflare
+      # deploy が途中で落ちても、それまでに void.lock.json が変わっていれば知らせる
       - name: void.lock.json が変わっていないか確かめる
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
         run: |
           if ! git diff --quiet -- void.lock.json; then
             git diff -- void.lock.json
-            echo "::warning::デプロイで void.lock.json が変わった。手元で bun run deploy を流して変更を commit する（Durable Object の migration 履歴）"
+            echo "::warning::デプロイで void.lock.json が変わった。手元で main を pull してから bunx void deploy を流し、変わった void.lock.json を commit する（Durable Object の migration 履歴。docs/setup.md の「3. デプロイする」）"
           fi
