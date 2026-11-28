@@ -79,21 +79,9 @@ bunx void secret list                   # 入った secret の名前を確かめ
 
 ## 3. デプロイする
 
-```bash
-bun run deploy   # void deploy
-```
+デプロイは GitHub Actions の [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) が流す。main への push のうち `worker/`・`mise.toml`・`deploy.yml` を変えたものだけで、typecheck・test のあと `void deploy --platform cloudflare` を流す（README や `camera/` だけの変更ではデプロイしない）。Worker の secret は上の `secrets:sync` で手元から入れる（CI は扱わない）。
 
-Void が build し、Durable Object（`XTokensDurableObject`）を作り、新しい version の readiness を確かめてから切り替える。最後に `https://personal-mcp.<subdomain>.workers.dev` が表示される（作者の本番 instance は `https://personal-mcp.mix-mix.workers.dev`。自分でデプロイしたときは表示された URL を使う）。デプロイで `void.lock.json` が変わったら commit する（Durable Object の migration 履歴。消したり並べ替えたりしない）。
-
-デプロイの状態と巻き戻しは `bunx void project status` / `bunx void project rollback`、ログは `bunx void project logs`。
-
-Worker は `X_REFRESH_TOKEN` を種として一度使い、以後はローテート後の token を Durable Object に持つ。`X_REFRESH_TOKEN` に別の値を入れ直すと、Durable Object の token を捨ててその種から取り直す（refresh token が失効したときの入れ直し）。同じ値を流し直しても何も起きない。
-
-### main へのマージで自動デプロイする
-
-初回のデプロイが済んだら、以後は main に `worker/` の変更がマージされるたびに [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) が typecheck・test のあと `void deploy --platform cloudflare` を流す。手元から流し直すときは Actions の Deploy を Run workflow で起動する。Worker の secret はこれまで通り手元の `secrets:sync` で入れる（CI は扱わない）。
-
-使うには、Cloudflare の API token を repository secret に一度入れる。token は Cloudflare ダッシュボードの API Tokens で「Edit Cloudflare Workers」テンプレートから作り、対象をこの Worker のアカウントだけに絞る。
+使うには、Cloudflare の API token を repository secret に一度入れる。token は Cloudflare ダッシュボードの API Tokens で「Edit Cloudflare Workers」テンプレートから作り、対象をこの Worker のアカウントだけに絞る（workers.dev にしか出さないので Zone の権限は消してよい）。
 
 ```bash
 # 値は画面に出さず、貼り付けた token を stdin から渡す
@@ -102,7 +90,19 @@ gh secret set CLOUDFLARE_API_TOKEN -R wwwyo/personal-mcp
 gh variable set CLOUDFLARE_ACCOUNT_ID -R wwwyo/personal-mcp --body <account id>
 ```
 
-secret が無いと Deploy は最初のステップで止まる。デプロイで `void.lock.json` が変わったときは warning が出るので、手元で `bun run deploy` を流して変更を commit する。
+secret が無いと Deploy は最初のステップで止まる。token を入れたあと、初回や変更なしで流し直すときは Run workflow で起動する。
+
+```bash
+gh workflow run deploy.yml -R wwwyo/personal-mcp
+```
+
+Void が build し、Durable Object（`XTokensDurableObject`）を作り、新しい version の readiness を確かめてから切り替える。URL は `https://personal-mcp.<subdomain>.workers.dev`（作者の本番 instance は `https://personal-mcp.mix-mix.workers.dev`）。
+
+デプロイで `void.lock.json`（Durable Object の migration 履歴）が変わると Deploy が warning を出す。CI は commit しないので、そのときだけ手元で `git switch main && git pull --ff-only` をしてから `bunx void deploy` を流し、変わった `void.lock.json` を commit する（消したり並べ替えたりしない）。古い checkout から流すと、CI のデプロイを古いコードで上書きする。
+
+デプロイの状態と巻き戻しは `bunx void project status` / `bunx void project rollback`、ログは `bunx void project logs`。
+
+Worker は `X_REFRESH_TOKEN` を種として一度使い、以後はローテート後の token を Durable Object に持つ。`X_REFRESH_TOKEN` に別の値を入れ直すと、Durable Object の token を捨ててその種から取り直す（refresh token が失効したときの入れ直し）。同じ値を流し直しても何も起きない。
 
 ## 4. portal につなぐ
 
