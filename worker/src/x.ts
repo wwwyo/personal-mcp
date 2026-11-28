@@ -99,7 +99,9 @@ export class XClient {
   constructor(store: XStore, app: XAppConfig, fetchImpl: typeof fetch = fetch) {
     this.#store = store;
     this.#app = app;
-    this.#fetch = fetchImpl;
+    // Workers の fetch は this が globalThis 以外だと TypeError（Illegal invocation）になるので、
+    // メソッドとして呼ばれないよう包む
+    this.#fetch = (input, init) => fetchImpl(input, init);
   }
 
   async #get(path: string, params: Record<string, string | number | undefined>): Promise<Json> {

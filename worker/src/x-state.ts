@@ -49,7 +49,9 @@ export class XState {
 
   constructor(kv: KV, fetchImpl: typeof fetch = fetch, now: () => number = () => Date.now() / 1000) {
     this.#kv = kv;
-    this.#fetch = fetchImpl;
+    // Workers の fetch は this が globalThis 以外だと TypeError（Illegal invocation）になるので、
+    // メソッドとして呼ばれないよう包む
+    this.#fetch = (input, init) => fetchImpl(input, init);
     this.#now = now;
   }
 
