@@ -79,11 +79,7 @@ bunx void secret list                   # 入った secret の名前を確かめ
 
 ## 3. デプロイする
 
-デプロイは GitHub Actions の [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) が流す。main に `worker/` の変更がマージされるたびに typecheck・test のあと `void deploy --platform cloudflare` を流す。初回や、変更なしで流し直すときは Run workflow で起動する。Worker の secret は上の `secrets:sync` で手元から入れる（CI は扱わない）。
-
-```bash
-gh workflow run deploy.yml -R wwwyo/personal-mcp
-```
+デプロイは GitHub Actions の [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) が流す。main への push のうち `worker/`・`mise.toml`・`deploy.yml` を変えたものだけで、typecheck・test のあと `void deploy --platform cloudflare` を流す（README や `camera/` だけの変更ではデプロイしない）。Worker の secret は上の `secrets:sync` で手元から入れる（CI は扱わない）。
 
 使うには、Cloudflare の API token を repository secret に一度入れる。token は Cloudflare ダッシュボードの API Tokens で「Edit Cloudflare Workers」テンプレートから作り、対象をこの Worker のアカウントだけに絞る（workers.dev にしか出さないので Zone の権限は消してよい）。
 
@@ -94,11 +90,15 @@ gh secret set CLOUDFLARE_API_TOKEN -R wwwyo/personal-mcp
 gh variable set CLOUDFLARE_ACCOUNT_ID -R wwwyo/personal-mcp --body <account id>
 ```
 
-secret が無いと Deploy は最初のステップで止まる。
+secret が無いと Deploy は最初のステップで止まる。token を入れたあと、初回や変更なしで流し直すときは Run workflow で起動する。
+
+```bash
+gh workflow run deploy.yml -R wwwyo/personal-mcp
+```
 
 Void が build し、Durable Object（`XTokensDurableObject`）を作り、新しい version の readiness を確かめてから切り替える。URL は `https://personal-mcp.<subdomain>.workers.dev`（作者の本番 instance は `https://personal-mcp.mix-mix.workers.dev`）。
 
-デプロイで `void.lock.json`（Durable Object の migration 履歴）が変わると Deploy が warning を出す。CI は commit しないので、そのときだけ手元で `bunx void deploy` を流し、変わった `void.lock.json` を commit する（消したり並べ替えたりしない）。
+デプロイで `void.lock.json`（Durable Object の migration 履歴）が変わると Deploy が warning を出す。CI は commit しないので、そのときだけ手元で `git switch main && git pull --ff-only` をしてから `bunx void deploy` を流し、変わった `void.lock.json` を commit する（消したり並べ替えたりしない）。古い checkout から流すと、CI のデプロイを古いコードで上書きする。
 
 デプロイの状態と巻き戻しは `bunx void project status` / `bunx void project rollback`、ログは `bunx void project logs`。
 

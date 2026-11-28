@@ -43,7 +43,7 @@ cd worker && bun install
 bunx void connect --platform cloudflare   # ブラウザで Cloudflare にログインし、デプロイ先のアカウントを選ぶ
 # fnox.local.toml に値を入れる（docs/setup.md の「secret を入れる」）
 bun run secrets:sync                      # fnox で復号して void secret put に流す（初回は deploy より先）
-gh workflow run deploy.yml -R wwwyo/personal-mcp  # Actions が void deploy（以後は main へのマージで自動）
+gh workflow run deploy.yml -R wwwyo/personal-mcp  # Actions が void deploy（以後は worker/ を変えた main へのマージで自動）
 ```
 
 `MCP_BEARER_TOKEN` を Bearer で付けて `POST https://personal-mcp.<subdomain>.workers.dev/mcp` に `tools/list` を送り、7 つのツールが返れば動いている。portal への登録と各 key の入れ方は [docs/setup.md](docs/setup.md)。
