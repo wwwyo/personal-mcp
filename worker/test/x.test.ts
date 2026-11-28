@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
-import { XClient, expandShortUrls, maxId, tweetBodyText } from "../src/x.ts";
+import { XClient, expandShortUrls, maxId, storeFromRpc, tweetBodyText } from "../src/x.ts";
+import { ToolError } from "../src/app-env.ts";
 import { XState } from "../src/x-state.ts";
 import { fakeFetch, json, memoryKV } from "./helpers.ts";
 
@@ -123,4 +124,19 @@ test("402 と 429 は分かるメッセージにする", async () => {
   await expect(new XClient(s, app, pay.fetch).posts({})).rejects.toThrow("クレジット");
   const limited = fakeFetch(() => json({}, 429, { "x-rate-limit-reset": "1764200000" }));
   await expect(new XClient(s, app, limited.fetch).posts({})).rejects.toThrow("rate limit");
+});
+
+test("RPC が値で返したエラーは ToolError に戻し、理由を利用者に見せる", async () => {
+  const s = new XState(memoryKV());
+  const rpc = {
+    accessToken: async () => ({ error: "X の token refresh に失敗（HTTP 400 invalid_request）" }),
+    cachedUser: () => s.cachedUser(),
+    cacheUser: (u: { id: string; username: string }) => s.cacheUser(u),
+    bookmarks: () => s.bookmarks(),
+    markBookmarksSeen: (ids: string[], w?: boolean) => s.markBookmarksSeen(ids, w),
+  };
+  const err = await storeFromRpc(rpc).accessToken(app).catch((e) => e);
+  expect(err).toBeInstanceOf(ToolError);
+  expect((err as Error).message).toContain("token refresh に失敗");
+  expect(await storeFromRpc({ ...rpc, accessToken: async () => ({ token: "at" }) }).accessToken(app)).toBe("at");
 });

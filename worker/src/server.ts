@@ -4,7 +4,7 @@ import { type Env, ToolError, requireSecret } from "./app-env.ts";
 import { LangfuseClient, assertReadablePath, daySessions, sessionRecords } from "./langfuse.ts";
 import { topPosts } from "./producthunt.ts";
 import { dateIn } from "./time.ts";
-import { XClient, type XStore } from "./x.ts";
+import { XClient, type XTokenRpc, storeFromRpc } from "./x.ts";
 
 const DATE = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD");
 const TWEET_ID = z.string().regex(/^\d{1,20}$/);
@@ -24,7 +24,7 @@ async function run(fn: () => Promise<unknown>): Promise<Result> {
 }
 
 function xClient(env: Env): XClient {
-  const store = env.X_TOKENS.get(env.X_TOKENS.idFromName("default")) as unknown as XStore;
+  const store = storeFromRpc(env.X_TOKENS.get(env.X_TOKENS.idFromName("default")) as unknown as XTokenRpc);
   return new XClient(store, {
     clientId: requireSecret(env, "X_CLIENT_ID"),
     clientSecret: env.X_CLIENT_SECRET?.trim() || undefined,

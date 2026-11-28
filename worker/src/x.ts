@@ -1,5 +1,5 @@
 import { ToolError } from "./app-env.ts";
-import type { BookmarksState, XAppConfig } from "./x-state.ts";
+import type { AccessTokenResult, BookmarksState, XAppConfig } from "./x-state.ts";
 
 // wwwyo/me の daily-end の x_fetch.py と同じ API・同じ課金上の配慮で取る。
 // 課金は「読んだ投稿 1 件ごと」。bookmarks は since_id が無く毎回先頭から読むので、
@@ -20,6 +20,26 @@ export interface XStore {
   cacheUser(user: { id: string; username: string }): Promise<void>;
   bookmarks(): Promise<BookmarksState>;
   markBookmarksSeen(ids: string[], walkComplete?: boolean): Promise<BookmarksState>;
+}
+
+/** Durable Object（XTokenStore）の RPC の形。accessToken だけエラーを値で返す */
+export interface XTokenRpc extends Omit<XStore, "accessToken"> {
+  accessToken(app: XAppConfig, force?: boolean): Promise<AccessTokenResult>;
+}
+
+/** RPC の stub を XStore にする。値で返ったエラーを ToolError に戻して、利用者に理由を見せる */
+export function storeFromRpc(rpc: XTokenRpc): XStore {
+  return {
+    accessToken: async (app, force) => {
+      const r = await rpc.accessToken(app, force);
+      if ("error" in r) throw new ToolError(r.error);
+      return r.token;
+    },
+    cachedUser: () => rpc.cachedUser(),
+    cacheUser: (user) => rpc.cacheUser(user),
+    bookmarks: () => rpc.bookmarks(),
+    markBookmarksSeen: (ids, walkComplete) => rpc.markBookmarksSeen(ids, walkComplete),
+  };
 }
 
 type Json = Record<string, unknown>;

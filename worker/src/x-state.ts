@@ -30,6 +30,9 @@ export interface XAppConfig {
   seedRefreshToken?: string;
 }
 
+/** Durable Object の RPC で返す accessToken の結果。RPC 越しだと ToolError のクラスが落ちるので、利用者向けのエラーは値で返す */
+export type AccessTokenResult = { token: string } | { error: string };
+
 export interface BookmarksState {
   seen_ids: string[];
   /** 一度でも最後まで辿り切ったか。辿り切る前は「既読が混じったら止める」を使えない */
