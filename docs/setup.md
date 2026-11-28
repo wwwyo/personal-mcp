@@ -89,6 +89,21 @@ Void が build し、Durable Object（`XTokensDurableObject`）を作り、新�
 
 Worker は `X_REFRESH_TOKEN` を種として一度使い、以後はローテート後の token を Durable Object に持つ。`X_REFRESH_TOKEN` に別の値を入れ直すと、Durable Object の token を捨ててその種から取り直す（refresh token が失効したときの入れ直し）。同じ値を流し直しても何も起きない。
 
+### main へのマージで自動デプロイする
+
+初回のデプロイが済んだら、以後は main に `worker/` の変更がマージされるたびに [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) が typecheck・test のあと `void deploy --platform cloudflare` を流す。手元から流し直すときは Actions の Deploy を Run workflow で起動する。Worker の secret はこれまで通り手元の `secrets:sync` で入れる（CI は扱わない）。
+
+使うには、Cloudflare の API token を repository secret に一度入れる。token は Cloudflare ダッシュボードの API Tokens で「Edit Cloudflare Workers」テンプレートから作り、対象をこの Worker のアカウントだけに絞る。
+
+```bash
+# 値は画面に出さず、貼り付けた token を stdin から渡す
+gh secret set CLOUDFLARE_API_TOKEN -R wwwyo/personal-mcp
+# token が複数アカウントに届くときだけ
+gh variable set CLOUDFLARE_ACCOUNT_ID -R wwwyo/personal-mcp --body <account id>
+```
+
+secret が無いと Deploy は最初のステップで止まる。デプロイで `void.lock.json` が変わったときは warning が出るので、手元で `bun run deploy` を流して変更を commit する。
+
 ## 4. portal につなぐ
 
 MCP の設定は dotfiles の `mcp/cloudflare/` が正本なので、そこで宣言して反映する（手順は dotfiles の AGENTS.md と dev-env skill の mcp-portal）。この server の値は次のとおり。

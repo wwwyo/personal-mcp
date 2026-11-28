@@ -69,7 +69,7 @@ bun run start       # この Mac のカメラで待つ（docs/camera.md）
 
 Void の使い方は `worker/node_modules/void/docs/` を読む（入口は `guide/quickstart.md`、コマンドは `reference/cli.md`）。
 
-Worker のデプロイと secret は本人が手元で行う（[docs/setup.md](docs/setup.md)）。カメラの portal・Tunnel・Gateway の設定は dotfiles の `mcp/cloudflare/` が正本（[docs/camera.md](docs/camera.md)）。
+Worker の secret と初回のデプロイは本人が手元で行い、以後のデプロイは main へのマージで `.github/workflows/deploy.yml` が流す（[docs/setup.md](docs/setup.md)）。カメラの portal・Tunnel・Gateway の設定は dotfiles の `mcp/cloudflare/` が正本（[docs/camera.md](docs/camera.md)）。
 
 ## 技術スタック
 

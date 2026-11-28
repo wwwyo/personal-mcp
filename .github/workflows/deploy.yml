@@ -1,0 +1,55 @@
+name: Deploy
+
+# main に worker/ の変更が入ったら Worker をデプロイする。手元から流し直すときは Actions の Run workflow。
+# 要るもの: repository secret CLOUDFLARE_API_TOKEN（docs/setup.md の「main へのマージで自動デプロイする」）。
+# secret（MCP_BEARER_TOKEN など Worker の secret）は今まで通り手元の secrets:sync で入れる。ここでは扱わない。
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - worker/**
+      - mise.toml
+      - .github/workflows/deploy.yml
+  workflow_dispatch:
+
+# デプロイは途中で止めない。後から来た push は前のデプロイが終わるのを待つ
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      # fresh な CI では workers.dev の subdomain を Void が知らないので渡す（docs/setup.md の本番 URL と同じ）
+      CLOUDFLARE_WORKERS_SUBDOMAIN: mix-mix
+    steps:
+      - name: CLOUDFLARE_API_TOKEN が無ければ止める
+        working-directory: .
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::repository secret CLOUDFLARE_API_TOKEN が未設定（docs/setup.md の「main へのマージで自動デプロイする」を見る）"
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run test
+      - run: bunx void deploy --platform cloudflare
+      - name: void.lock.json が変わっていないか確かめる
+        run: |
+          if ! git diff --quiet -- void.lock.json; then
+            git diff -- void.lock.json
+            echo "::warning::デプロイで void.lock.json が変わった。手元で bun run deploy を流して変更を commit する（Durable Object の migration 履歴）"
+          fi
